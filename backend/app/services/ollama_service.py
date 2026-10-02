@@ -111,14 +111,38 @@ class OllamaService:
         target = _normalize_model_name(self.model)
         return any(_normalize_model_name(name) == target for name in installed_models)
 
-    def chat(self, message: str) -> str:
-        payload = {
+    def chat(
+        self,
+        message: str,
+        *,
+        system: str | None = None,
+        response_format: dict[str, Any] | str | None = None,
+        temperature: float | None = None,
+        max_tokens: int | None = None,
+    ) -> str:
+        """Send a single-turn chat. `response_format` maps to Ollama's `format`
+        (either "json" or a JSON schema) for structured output."""
+        messages: list[dict[str, str]] = []
+        if system:
+            messages.append({"role": "system", "content": system})
+        messages.append({"role": "user", "content": message})
+
+        payload: dict[str, Any] = {
             "model": self.model,
-            "messages": [{"role": "user", "content": message}],
+            "messages": messages,
             "stream": False,
             # Disable qwen3 "thinking" output to keep CPU inference fast and responses clean.
             "think": False,
         }
+        if response_format is not None:
+            payload["format"] = response_format
+        options: dict[str, Any] = {}
+        if temperature is not None:
+            options["temperature"] = temperature
+        if max_tokens is not None:
+            options["num_predict"] = max_tokens
+        if options:
+            payload["options"] = options
         data = self._request("POST", "/api/chat", self._generation_timeout, json=payload)
 
         msg = data.get("message")

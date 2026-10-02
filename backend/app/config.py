@@ -33,6 +33,7 @@ class Settings:
     ollama_connect_timeout: float
     ollama_status_timeout: float
     ollama_generation_timeout: float
+    max_upload_bytes: int
 
 
 @lru_cache
@@ -46,4 +47,5 @@ def get_settings() -> Settings:
         ollama_status_timeout=_float_env("OLLAMA_STATUS_TIMEOUT", 10.0),
         # CPU inference of qwen3:8b can easily exceed 60s, so be generous.
         ollama_generation_timeout=_float_env("OLLAMA_GENERATION_TIMEOUT", 300.0),
+        max_upload_bytes=20 * 1024 * 1024,
     )
